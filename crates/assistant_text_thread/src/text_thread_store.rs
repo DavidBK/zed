@@ -11,7 +11,7 @@ use context_server::ContextServerId;
 use fs::{Fs, RemoveOptions};
 use futures::StreamExt;
 use fuzzy::StringMatchCandidate;
-use gpui::{App, AppContext as _, AsyncApp, Context, Entity, Task, WeakEntity};
+use gpui::{App, AppContext as _, AsyncApp, Context, Entity, Task, TaskExt as _, WeakEntity};
 use itertools::Itertools;
 use language::LanguageRegistry;
 use paths::text_threads_dir;
@@ -903,7 +903,8 @@ impl TextThreadStore {
             }
             ContextServerStatus::Stopped
             | ContextServerStatus::Error(_)
-            | ContextServerStatus::AuthRequired => {
+            | ContextServerStatus::AuthRequired
+            | ContextServerStatus::ClientSecretRequired { .. } => {
                 if let Some(slash_command_ids) =
                     self.context_server_slash_command_ids.remove(server_id)
                 {

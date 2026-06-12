@@ -12,16 +12,14 @@ use fs::{Fs, RenameOptions};
 use futures::{FutureExt, StreamExt, future::Shared};
 use gpui::{
     App, AppContext as _, Context, Entity, EventEmitter, RenderImage, SharedString, Subscription,
-    Task,
+    Task, TaskExt as _,
 };
 use itertools::Itertools as _;
 use language::{AnchorRangeExt, Bias, Buffer, LanguageRegistry, OffsetRangeExt, Point, ToOffset};
 use language_model::{
-    AnthropicCompletionType, AnthropicEventData, AnthropicEventType, CompletionIntent,
-    LanguageModel, LanguageModelCacheConfiguration, LanguageModelCompletionEvent,
+    CompletionIntent, LanguageModel, LanguageModelCompletionError, LanguageModelCompletionEvent,
     LanguageModelImage, LanguageModelRegistry, LanguageModelRequest, LanguageModelRequestMessage,
-    LanguageModelToolUseId, MessageContent, PaymentRequiredError, Role, StopReason,
-    report_anthropic_event,
+    LanguageModelToolUseId, MessageContent, Role, StopReason,
 };
 use open_ai::Model as OpenAiModel;
 use paths::text_threads_dir;
@@ -42,6 +40,34 @@ use text::{BufferSnapshot, ToPoint};
 use ui::IconName;
 use util::{ResultExt, TryFutureExt, post_inc};
 use uuid::Uuid;
+
+fn role_from_proto(role: i32) -> Role {
+    match proto::LanguageModelRole::from_i32(role) {
+        Some(proto::LanguageModelRole::LanguageModelUser) => Role::User,
+        Some(proto::LanguageModelRole::LanguageModelAssistant) => Role::Assistant,
+        Some(proto::LanguageModelRole::LanguageModelSystem) => Role::System,
+        None => Role::User,
+    }
+}
+
+fn role_to_proto(role: Role) -> proto::LanguageModelRole {
+    match role {
+        Role::User => proto::LanguageModelRole::LanguageModelUser,
+        Role::Assistant => proto::LanguageModelRole::LanguageModelAssistant,
+        Role::System => proto::LanguageModelRole::LanguageModelSystem,
+    }
+}
+
+/// Prompt-caching anchor configuration.
+///
+/// This used to come from `LanguageModel::cache_configuration`, which was
+/// removed upstream in 3a742b5e0d (it always returned `None` by then).
+#[derive(Clone, Debug)]
+pub struct LanguageModelCacheConfiguration {
+    pub max_cache_anchors: usize,
+    pub should_speculate: bool,
+    pub min_total_token: u64,
+}
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct TextThreadId(String);
@@ -176,7 +202,7 @@ impl TextThreadOperation {
                         .context("invalid anchor")?,
                     },
                     metadata: MessageMetadata {
-                        role: Role::from_proto(message.role),
+                        role: role_from_proto(message.role),
                         status: MessageStatus::from_proto(
                             message.status.context("invalid status")?,
                         ),
@@ -191,7 +217,7 @@ impl TextThreadOperation {
                     update.message_id.context("invalid message id")?,
                 )),
                 metadata: MessageMetadata {
-                    role: Role::from_proto(update.role),
+                    role: role_from_proto(update.role),
                     status: MessageStatus::from_proto(update.status.context("invalid status")?),
                     timestamp: language::proto::deserialize_timestamp(
                         update.timestamp.context("invalid timestamp")?,
@@ -287,7 +313,7 @@ impl TextThreadOperation {
                         message: Some(proto::ContextMessage {
                             id: Some(language::proto::serialize_timestamp(anchor.id.0)),
                             start: Some(language::proto::serialize_anchor(&anchor.start)),
-                            role: metadata.role.to_proto() as i32,
+                            role: role_to_proto(metadata.role) as i32,
                             status: Some(metadata.status.to_proto()),
                         }),
                         version: language::proto::serialize_version(version),
@@ -302,7 +328,7 @@ impl TextThreadOperation {
                 variant: Some(proto::context_operation::Variant::UpdateMessage(
                     proto::context_operation::UpdateMessage {
                         message_id: Some(language::proto::serialize_timestamp(message_id.0)),
-                        role: metadata.role.to_proto() as i32,
+                        role: role_to_proto(metadata.role) as i32,
                         status: Some(metadata.status.to_proto()),
                         timestamp: Some(language::proto::serialize_timestamp(metadata.timestamp)),
                         version: language::proto::serialize_version(version),
@@ -1247,9 +1273,23 @@ impl TextThread {
                         .await;
                 }
 
+                // The precise `count_tokens` API was removed from the
+                // `LanguageModel` trait, so estimate ~4 bytes per token.
                 let token_count = cx
-                    .update(|cx| model.model.count_tokens(request, cx))
-                    .await?;
+                    .background_spawn(async move {
+                        let bytes: usize = request
+                            .messages
+                            .iter()
+                            .flat_map(|message| message.content.iter())
+                            .map(|content| match content {
+                                MessageContent::Text(text) => text.len(),
+                                MessageContent::Thinking { text, .. } => text.len(),
+                                _ => 0,
+                            })
+                            .sum();
+                        (bytes / 4) as u64
+                    })
+                    .await;
                 this.update(cx, |this, cx| {
                     this.token_count = Some(token_count);
                     this.start_cache_warming(&model.model, cx);
@@ -1368,7 +1408,7 @@ impl TextThread {
     }
 
     fn start_cache_warming(&mut self, model: &Arc<dyn LanguageModel>, cx: &mut Context<Self>) {
-        let cache_configuration = model.cache_configuration();
+        let cache_configuration: Option<LanguageModelCacheConfiguration> = None;
 
         if !self.mark_cache_anchors(&cache_configuration, true, cx) {
             return;
@@ -2000,7 +2040,7 @@ impl TextThread {
         let model = model.model;
 
         // Compute which messages to cache, including the last one.
-        self.mark_cache_anchors(&model.cache_configuration(), false, cx);
+        self.mark_cache_anchors(&None, false, cx);
 
         let request = self.to_completion_request(Some(&model), cx);
 
@@ -2150,7 +2190,10 @@ impl TextThread {
 
                 this.update(cx, |this, cx| {
                     let error_message = if let Some(error) = result.as_ref().err() {
-                        if error.is::<PaymentRequiredError>() {
+                        if matches!(
+                            error.downcast_ref::<LanguageModelCompletionError>(),
+                            Some(LanguageModelCompletionError::PaymentRequired)
+                        ) {
                             cx.emit(TextThreadEvent::ShowPaymentRequiredError);
                             this.update_metadata(assistant_message_id, cx, |metadata| {
                                 metadata.status = MessageStatus::Canceled;
@@ -2195,13 +2238,6 @@ impl TextThread {
                         error_message,
                         language_name = language_name.as_ref().map(|name| name.to_proto()),
                     );
-
-                    report_anthropic_event(&model, AnthropicEventData {
-                        completion_type: AnthropicCompletionType::Panel,
-                        event: AnthropicEventType::Response,
-                        language_name: language_name.map(|name| name.to_proto()),
-                        message_id: None,
-                    }, cx);
 
                     if let Ok(stop_reason) = result {
                         match stop_reason {
@@ -2636,7 +2672,7 @@ impl TextThread {
     }
 
     pub fn summarize(&mut self, mut replace_old: bool, cx: &mut Context<Self>) {
-        let Some(model) = LanguageModelRegistry::read_global(cx).thread_summary_model() else {
+        let Some(model) = LanguageModelRegistry::read_global(cx).thread_summary_model(cx) else {
             return;
         };
 

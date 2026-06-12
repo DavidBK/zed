@@ -74,9 +74,9 @@ impl SlashCommand for OutlineSlashCommand {
 
                 let path = path.as_deref().unwrap_or("untitled");
                 let mut outline_text = format!("Symbols for {path}:\n");
-                for item in &outline.path_candidates {
+                for item in &outline.items {
                     outline_text.push_str("- ");
-                    outline_text.push_str(&item.string);
+                    outline_text.push_str(&item.text);
                     outline_text.push('\n');
                 }
 

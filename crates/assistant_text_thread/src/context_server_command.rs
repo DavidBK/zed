@@ -100,6 +100,7 @@ impl SlashCommand for ContextServerSlashCommand {
                                 name: arg_name,
                                 value: arg_value,
                             },
+                            context: None,
                             meta: None,
                         },
                     )

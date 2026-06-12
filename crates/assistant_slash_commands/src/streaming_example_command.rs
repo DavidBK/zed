@@ -7,7 +7,7 @@ use assistant_slash_command::{
     ArgumentCompletion, SlashCommand, SlashCommandContent, SlashCommandEvent,
     SlashCommandOutputSection, SlashCommandResult,
 };
-use feature_flags::FeatureFlag;
+use feature_flags::{FeatureFlag, PresenceFlag};
 use futures::channel::mpsc;
 use gpui::{Task, WeakEntity};
 use language::{BufferSnapshot, LspAdapterDelegate};
@@ -19,6 +19,7 @@ pub struct StreamingExampleSlashCommandFeatureFlag;
 
 impl FeatureFlag for StreamingExampleSlashCommandFeatureFlag {
     const NAME: &'static str = "streaming-example-slash-command";
+    type Value = PresenceFlag;
 }
 
 pub struct StreamingExampleSlashCommand;

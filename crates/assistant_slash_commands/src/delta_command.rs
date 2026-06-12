@@ -85,7 +85,9 @@ impl SlashCommand for DeltaSlashCommand {
             }
         }
 
-        cx.background_spawn(async move {
+        // Note: spawned on the foreground executor because the captured event
+        // streams are not provably `Send` after the gpui Task unification.
+        cx.spawn(async move |_cx| {
             let mut output = SlashCommandOutput::default();
             let mut changes_detected = false;
 
