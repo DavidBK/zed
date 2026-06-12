@@ -567,7 +567,6 @@ pub fn initialize_workspace(
         let edit_prediction_ui = cx.new(|cx| {
             edit_prediction_ui::EditPredictionButton::new(
                 app_state.fs.clone(),
-                app_state.user_store.clone(),
                 edit_prediction_menu_handle.clone(),
                 workspace.project().clone(),
                 cx,
