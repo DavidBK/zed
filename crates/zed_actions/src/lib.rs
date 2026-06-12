@@ -1,7 +1,7 @@
 use gpui::{Action, actions};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::{path::PathBuf, sync::Arc};
+use std::sync::Arc;
 
 // If the zed binary doesn't use anything in this crate, it will be optimized away
 // and the actions won't initialize. So we just provide an empty initialization function

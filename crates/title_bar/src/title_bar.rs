@@ -456,16 +456,6 @@ impl TitleBar {
             }),
         );
         subscriptions.push(cx.observe(&user_store, |_a, _, cx| cx.notify()));
-        if let Some(workspace_entity) = workspace.weak_handle().upgrade() {
-            subscriptions.push(cx.subscribe(
-                &workspace_entity,
-                |_, _, event: &workspace::Event, cx| {
-                    if matches!(event, workspace::Event::WorktreeCreationChanged) {
-                        cx.notify();
-                    }
-                },
-            ));
-        }
         subscriptions.push(cx.observe_button_layout_changed(window, |_, _, cx| cx.notify()));
         if let Some(trusted_worktrees) = TrustedWorktrees::try_get_global(cx) {
             subscriptions.push(cx.subscribe(&trusted_worktrees, |_, _, _, cx| {
