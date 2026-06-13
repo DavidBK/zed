@@ -22,7 +22,7 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
-use util::{path_list::PathList, rel_path::rel_path};
+use util::path_list::PathList;
 
 fn init_test(cx: &mut TestAppContext) {
     cx.update(|cx| {

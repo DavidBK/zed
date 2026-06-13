@@ -866,7 +866,7 @@ fn main() {
             }
         }
 
-        initialize_workspace(app_state.clone(), prompt_builder.clone(), cx);
+        initialize_workspace(app_state.clone(), prompt_builder, cx);
 
         cx.activate(true);
 

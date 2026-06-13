@@ -16,8 +16,9 @@ use futures::{
 };
 use gpui::{App, Entity, SharedString, Task, TestAppContext, WeakEntity, prelude::*};
 use language::{Buffer, BufferSnapshot, LanguageRegistry, LspAdapterDelegate};
+use crate::LanguageModelCacheConfiguration;
 use language_model::{
-    ConfiguredModel, LanguageModelCacheConfiguration, LanguageModelRegistry, Role,
+    ConfiguredModel, LanguageModelRegistry, Role,
     fake_provider::{FakeLanguageModel, FakeLanguageModelProvider},
 };
 use parking_lot::Mutex;

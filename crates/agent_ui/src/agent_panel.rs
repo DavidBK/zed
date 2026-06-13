@@ -7557,13 +7557,13 @@ mod tests {
 
         // Load fresh panels for each workspace and verify independent state.
         let async_cx = cx.update(|window, cx| window.to_async(cx));
-        let loaded_a = AgentPanel::load(workspace_a.downgrade(), async_cx)
+        let loaded_a = AgentPanel::load(workspace_a.downgrade(), std::sync::Arc::new(prompt_store::PromptBuilder::new(None).unwrap()), async_cx)
             .await
             .expect("panel A load should succeed");
         cx.run_until_parked();
 
         let async_cx = cx.update(|window, cx| window.to_async(cx));
-        let loaded_b = AgentPanel::load(workspace_b.downgrade(), async_cx)
+        let loaded_b = AgentPanel::load(workspace_b.downgrade(), std::sync::Arc::new(prompt_store::PromptBuilder::new(None).unwrap()), async_cx)
             .await
             .expect("panel B load should succeed");
         cx.run_until_parked();
@@ -7658,7 +7658,7 @@ mod tests {
             TerminalThreadMetadataStore::init_global(cx);
         });
         let async_cx = cx.update(|window, cx| window.to_async(cx));
-        let loaded = AgentPanel::load(workspace.downgrade(), async_cx)
+        let loaded = AgentPanel::load(workspace.downgrade(), std::sync::Arc::new(prompt_store::PromptBuilder::new(None).unwrap()), async_cx)
             .await
             .expect("panel load should succeed");
         for _ in 0..8 {
@@ -7910,7 +7910,7 @@ mod tests {
         });
 
         let async_cx = cx.update(|window, cx| window.to_async(cx));
-        let loaded = AgentPanel::load(workspace_b.downgrade(), async_cx)
+        let loaded = AgentPanel::load(workspace_b.downgrade(), std::sync::Arc::new(prompt_store::PromptBuilder::new(None).unwrap()), async_cx)
             .await
             .expect("panel load should succeed");
         workspace_b.update_in(cx, |workspace, window, cx| {
@@ -7988,7 +7988,7 @@ mod tests {
         cx.run_until_parked();
 
         let async_cx = cx.update(|window, cx| window.to_async(cx));
-        let loaded = AgentPanel::load(workspace.downgrade(), async_cx)
+        let loaded = AgentPanel::load(workspace.downgrade(), std::sync::Arc::new(prompt_store::PromptBuilder::new(None).unwrap()), async_cx)
             .await
             .expect("panel load should succeed");
         cx.run_until_parked();
@@ -8687,7 +8687,7 @@ mod tests {
         cx.run_until_parked();
 
         let async_cx = cx.update(|window, cx| window.to_async(cx));
-        let reloaded_panel = AgentPanel::load(workspace.downgrade(), async_cx)
+        let reloaded_panel = AgentPanel::load(workspace.downgrade(), std::sync::Arc::new(prompt_store::PromptBuilder::new(None).unwrap()), async_cx)
             .await
             .expect("panel load with draft should succeed");
         cx.run_until_parked();
@@ -8779,7 +8779,7 @@ mod tests {
         cx.run_until_parked();
 
         let async_cx = cx.update(|window, cx| window.to_async(cx));
-        let loaded_panel = AgentPanel::load(workspace.downgrade(), async_cx)
+        let loaded_panel = AgentPanel::load(workspace.downgrade(), std::sync::Arc::new(prompt_store::PromptBuilder::new(None).unwrap()), async_cx)
             .await
             .expect("panel load should succeed");
         cx.run_until_parked();
@@ -8930,7 +8930,7 @@ mod tests {
         panel.update(cx, |panel, cx| panel.serialize(cx));
         cx.run_until_parked();
         let async_cx = cx.update(|window, cx| window.to_async(cx));
-        let loaded_panel = AgentPanel::load(workspace.downgrade(), async_cx)
+        let loaded_panel = AgentPanel::load(workspace.downgrade(), std::sync::Arc::new(prompt_store::PromptBuilder::new(None).unwrap()), async_cx)
             .await
             .expect("panel load should succeed");
         cx.run_until_parked();
@@ -9092,7 +9092,7 @@ mod tests {
         });
 
         let async_cx = cx.update(|window, cx| window.to_async(cx));
-        let reloaded_panel = AgentPanel::load(workspace.downgrade(), async_cx)
+        let reloaded_panel = AgentPanel::load(workspace.downgrade(), std::sync::Arc::new(prompt_store::PromptBuilder::new(None).unwrap()), async_cx)
             .await
             .expect("panel load should succeed");
         cx.run_until_parked();
@@ -11672,7 +11672,7 @@ mod tests {
         // Load the panel via `load()`, which reads the global fallback
         // asynchronously when no per-workspace state exists.
         let async_cx = cx.update(|window, cx| window.to_async(cx));
-        let panel = AgentPanel::load(workspace.downgrade(), async_cx)
+        let panel = AgentPanel::load(workspace.downgrade(), std::sync::Arc::new(prompt_store::PromptBuilder::new(None).unwrap()), async_cx)
             .await
             .expect("panel load should succeed");
         cx.run_until_parked();
@@ -11751,13 +11751,13 @@ mod tests {
 
         // Load fresh panels from serialized state and verify independence
         let async_cx = cx.update(|window, cx| window.to_async(cx));
-        let loaded_a = AgentPanel::load(workspace_a.downgrade(), async_cx)
+        let loaded_a = AgentPanel::load(workspace_a.downgrade(), std::sync::Arc::new(prompt_store::PromptBuilder::new(None).unwrap()), async_cx)
             .await
             .expect("panel A load should succeed");
         cx.run_until_parked();
 
         let async_cx = cx.update(|window, cx| window.to_async(cx));
-        let loaded_b = AgentPanel::load(workspace_b.downgrade(), async_cx)
+        let loaded_b = AgentPanel::load(workspace_b.downgrade(), std::sync::Arc::new(prompt_store::PromptBuilder::new(None).unwrap()), async_cx)
             .await
             .expect("panel B load should succeed");
         cx.run_until_parked();
