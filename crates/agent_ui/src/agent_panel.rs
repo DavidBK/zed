@@ -6339,16 +6339,8 @@ impl AgentPanel {
             let _ = &new_thread_menu_builder;
             let new_thread_menu = IconButton::new("new_text_thread_btn", IconName::Plus)
                 .icon_size(IconSize::Small)
-                .tooltip({
-                    let focus_handle = focus_handle.clone();
-                    move |_window, cx| {
-                        Tooltip::for_action_in(
-                            "New Text Thread",
-                            &NewTextThread,
-                            &focus_handle,
-                            cx,
-                        )
-                    }
+                .tooltip(move |_window, cx| {
+                    Tooltip::for_action_in("New Text Thread", &NewTextThread, &focus_handle, cx)
                 })
                 .on_click(cx.listener(|this, _, window, cx| {
                     this.new_text_thread(window, cx);
