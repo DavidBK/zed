@@ -382,9 +382,7 @@ pub fn init(cx: &mut App) {
             workspace
                 .register_action(|workspace, _: &NewThread, window, cx| {
                     if let Some(panel) = workspace.panel::<AgentPanel>(cx) {
-                        panel.update(cx, |panel, cx| {
-                            panel.new_thread_with_workspace(Some(workspace), window, cx)
-                        });
+                        panel.update(cx, |panel, cx| panel.new_text_thread(window, cx));
                         workspace.focus_panel::<AgentPanel>(window, cx);
                     }
                 })
@@ -2017,6 +2015,7 @@ impl AgentPanel {
         self.new_text_thread(window, cx);
     }
 
+    #[allow(dead_code)]
     fn new_thread_with_workspace(
         &mut self,
         workspace: Option<&Workspace>,
