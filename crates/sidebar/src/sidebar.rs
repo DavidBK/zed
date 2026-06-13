@@ -3505,7 +3505,10 @@ impl Sidebar {
         let metadata = metadata.clone();
         let mut async_window_cx = window.to_async(cx);
         cx.spawn(async move |_cx| {
-            let panel = AgentPanel::load(workspace.clone(), async_window_cx.clone()).await?;
+            let prompt_builder = std::sync::Arc::new(prompt_store::PromptBuilder::new(None)?);
+            let panel =
+                AgentPanel::load(workspace.clone(), prompt_builder, async_window_cx.clone())
+                    .await?;
 
             workspace.update_in(&mut async_window_cx, |workspace, window, cx| {
                 let panel = workspace.panel::<AgentPanel>(cx).unwrap_or_else(|| {
@@ -4359,7 +4362,10 @@ impl Sidebar {
         let metadata = metadata.clone();
         let mut async_window_cx = window.to_async(cx);
         cx.spawn(async move |_cx| {
-            let panel = AgentPanel::load(workspace.clone(), async_window_cx.clone()).await?;
+            let prompt_builder = std::sync::Arc::new(prompt_store::PromptBuilder::new(None)?);
+            let panel =
+                AgentPanel::load(workspace.clone(), prompt_builder, async_window_cx.clone())
+                    .await?;
 
             workspace.update_in(&mut async_window_cx, |workspace, window, cx| {
                 let panel = workspace.panel::<AgentPanel>(cx).unwrap_or_else(|| {
