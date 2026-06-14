@@ -1,4 +1,9 @@
-# Zed
+# ZedD
+
+I love Zed, but I used to like it more;
+this is a small fork that restores text threads and Copilot completions, and disables Zed-managed worktree management.
+
+---
 
 [![Zed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/zed-industries/zed/main/assets/badge/v0.json)](https://zed.dev)
 [![CI](https://github.com/zed-industries/zed/actions/workflows/run_tests.yml/badge.svg)](https://github.com/zed-industries/zed/actions/workflows/run_tests.yml)
